@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>A Special Question for Chloe</title>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<style>
+    :root {
+        --bpm-speed: 0.4878s; /* 123 BPM */
+        --neon-color: #ff7675;
+    }
+
+    /* GLOBAL HEART CURSOR */
+    html, body, .sketch-container, button, .btn, a, input {
+        cursor: url('assets/heart.png') 16 16, auto !important;
+    }
+
+    /* SCROLL FIXES */
+    html {
+        scroll-behavior: smooth;
+        height: 100%;
+    }
+
+    body {
+        margin: 0; padding: 0; 
+        min-height: 100%;
+        width: 100%;
+        display: flex; 
+        justify-content: center; 
+        align-items: flex-start; /* Start from top so it scrolls down */
+        background-color: #a0cfee; 
+        overflow-x: hidden;
+        overflow-y: auto; 
+        font-family: "Times New Roman", Times, serif;
+        font-size: 15px;
+        -webkit-overflow-scrolling: touch; /* Smooth scroll for iOS */
+    }
+
+    .anime-bg-layer {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+        background-image: url('assets/anime-bg.jpg'); 
+        background-size: cover; background-position: center; opacity: 0.5;
+        transition: background-image 0.5s ease-in-out;
+    }
+
+    /* INTRO IMAGE STYLING */
+    #introPic {
+        width: 100%; max-height: 180px; object-fit: cover;
+        border-radius: 10px; border: 2px solid #000;
+        margin-bottom: 20px; animation: breathe 4s ease-in-out infinite;
+    }
+
+    @keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+
+    .sketch-container {
+        background: rgba(255, 255, 255, 0.95);
+        padding: 30px; border-radius: 15px;
+        border: 4px solid #000; text-align: center;
+        position: relative; z-index: 10;
+        width: 550px; 
+        width: calc(100% - 40px); /* Responsive width */
+        max-width: 550px;
+        margin: 40px 20px; /* Space for scrolling */
+        min-height: 400px; 
+        display: flex; flex-direction: column;
+        animation: neonPulse var(--bpm-speed) ease-in-out infinite;
+        box-sizing: border-box;
+    }
+
+    @keyframes neonPulse {
+        0%, 100% { box-shadow: 0 0 10px var(--neon-color); }
+        50% { box-shadow: 0 0 25px var(--neon-color); }
+    }
+
+    /* MOBILE OPTIMIZATION */
+    @media (max-width: 600px) {
+        .sketch-container { padding: 20px; margin: 20px 10px; }
+        .btn { padding: 10px 15px; font-size: 1.1em; }
+        h1 { font-size: 1.6em !important; }
+        .final-pics { flex-direction: column; height: auto !important; }
+        .final-pics img { width: 80% !important; margin-bottom: 15px; }
+        #pastaVideo { width: 90vw; }
+        .modal-box { width: 85% !important; padding: 20px; }
+    }
+
+    .glitch-text { position: relative; display: inline-block; }
+    .glitch-text:hover {
+        animation: glitch 0.3s cubic-bezier(.25, .46, .45, .94) both infinite;
+        color: #d63031;
+    }
+
+    @keyframes glitch {
+        0% { transform: translate(0); }
+        20% { transform: translate(-2px, 2px); }
+        40% { transform: translate(-2px, -2px); }
+        60% { transform: translate(2px, 2px); }
+        80% { transform: translate(2px, -2px); }
+        100% { transform: translate(0); }
+    }
+
+    .typing-mask { border-right: 2px solid var(--neon-color); white-space: pre-wrap; word-wrap: break-word; }
+
+    /* OVERLAYS */
+    #videoOverlay, #confirmOverlay, #wrongPopupOverlay, #homeConfirmOverlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.9); display: none; justify-content: center;
+        align-items: center; z-index: 6000; flex-direction: column;
+        overflow-y: auto; /* Allow overlays to scroll if video/text is too big */
+    }
+
+    .modal-box {
+        background: white; padding: 30px; border: 4px solid #000;
+        border-radius: 10px; text-align: center; width: 380px;
+        box-shadow: 5px 5px 0 var(--neon-color);
+        max-width: 90%;
+    }
+
+    #pastaVideo { width: 70vw; max-width: 594px; aspect-ratio: 594 / 420; border: 3px solid #fff; border-radius: 5px; }
+
+    .btn {
+        padding: 12px 25px; font-size: 1.3em; cursor: pointer;
+        border: 3px solid #000; background: white; border-radius: 12px;
+        font-family: "Times New Roman", Times, serif;
+        transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); margin: 5px;
+        max-width: 100%;
+    }
+
+    #yesBtn { background-color: #ffdde1; color: #d63031; }
+    #noBtn { background-color: #dfe6e9; color: #636e72; }
+
+    #musicToggle {
+        position: fixed; bottom: 15px; right: 15px; z-index: 2000;
+        background: white; border: 2px solid #000; padding: 8px 15px;
+        border-radius: 50px; font-size: 0.8em; cursor: pointer; display: none;
+    }
+
+    .nav-container { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; border-top: 2px dashed #ccc; padding-top: 15px; }
+    .step { display: none; flex-direction: column; height: 100%; }
+    .active-step { display: flex; }
+
+    /* AUTH SCREEN SPECIFIC */
+    #authInput {
+        padding: 12px; font-size: 1.2em; border: 3px solid #000;
+        border-radius: 10px; width: 90%; margin: 20px auto;
+        text-align: center; font-family: monospace; box-sizing: border-box;
+    }
+
+    #proofImage { width: 100%; max-height: 200px; object-fit: contain; margin-bottom: 10px; display: none; border: 2px solid #333; }
+    .final-pics { position: relative; display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 30px; min-height: 250px; }
+    .final-pics img { width: 150px; height: auto; border: 3px solid #000; border-radius: 10px; }
+    .float-1 { animation: floating 3s ease-in-out infinite; }
+    .float-2 { animation: floating 4s ease-in-out infinite; animation-delay: 0.5s; }
+    .float-3 { animation: floating 3.5s ease-in-out infinite; animation-delay: 1s; }
+
+    @keyframes floating { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
+    .shake { animation: shake 0.4s; }
+    @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+</style>
+</head>
+<body>
+
+    <div class="anime-bg-layer" id="bgLayer"></div>
+    <audio id="bgMusic" preload="auto"><source src="assets/song.mp3" type="audio/mpeg"></audio>
+    <button id="musicToggle" onclick="toggleMusic()">🔊 Pause Music</button>
+
+    <div id="stepLogin" class="step active-step">
+        <div class="sketch-container">
+            <h1 class="glitch-text" style="font-size: 2em;">🔒 ACCESS RESTRICTED</h1>
+            <p>Authentication Required. Enter Encryption Key to access 'Valentine_Project_2026'</p>
+            <input type="password" id="authInput" placeholder="Enter Key...">
+            <button class="btn" onclick="checkAuth()">Authenticate</button>
+            <p id="authError" style="color: #d63031; font-weight: bold; margin-top: 10px;"></p>
+        </div>
+    </div>
+
+    <div id="homeConfirmOverlay">
+        <div class="modal-box">
+            <h2 style="color:#d63031;">⚠️ SYSTEM RESET</h2>
+            <p>Restart everything? (Security gate remains unlocked)</p>
+            <button class="btn" onclick="fullSystemReset()" style="background:#ff7675; color:white;">Yes, Reset</button>
+            <button class="btn" onclick="closeHomeConfirm()">Cancel</button>
+        </div>
+    </div>
+
+    <div id="confirmOverlay">
+        <div class="modal-box">
+            <h2 style="color:#d63031;">⚠️ SECURITY WARNING</h2>
+            <p>Accessing 'No' choice may leak sensitive pasta footage.</p>
+            <button class="btn" onclick="confirmNo(true)" style="background:#ff7675; color:white;">Proceed</button>
+            <button class="btn" onclick="confirmNo(false)">Cancel</button>
+        </div>
+    </div>
+
+    <div id="wrongPopupOverlay">
+        <div class="modal-box">
+            <h2 style="color:#d63031;">❌ ERROR DETECTED</h2>
+            <p id="wrongPopupText" style="font-size: 1.1em;"></p>
+            <button class="btn" onclick="closeWrongPopup()">Re-authenticate ↻</button>
+        </div>
+    </div>
+
+    <div id="videoOverlay">
+        <h2 id="videoRoastText" style="color:white; margin:10px; text-align:center; font-size:1.2em;"></h2>
+        <video id="pastaVideo" playsinline webkit-playsinline><source src="assets/pasta.mp4" type="video/mp4"></video>
+        <button class="btn" style="margin-top:20px; font-size:0.8em;" onclick="closeVideoAuto()">Skip Warning (Dev Use)</button>
+    </div>
+
+    <div class="sketch-container" id="mainBox" style="display:none;">
+        <div id="step0" class="step">
+            <img src="assets/intro.jpeg" id="introPic">
+            <h1 class="glitch-text" style="font-size: 2.2em;">Chloe, Will you be my Valentine? (◕‿◕)</h1>
+            <div style="display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap;">
+                <button class="btn" id="yesBtn">YES!</button>
+                <button class="btn glitch-text" id="noBtn" onclick="initiateNoProcess()">No</button>
+            </div>
+        </div>
+
+        <div id="step1" class="step">
+            <h2 style="color: #ff4757;">I knew you would say yes 😉</h2>
+            <p>Ready for the quiz? We gotta check you first tho ❤️</p>
+            <button class="btn" onclick="goToStep(2)">Start Quiz! ✏️</button>
+            <div class="nav-container"><button class="btn" style="font-size:0.8em;" onclick="triggerHomeConfirm()">🏠 Home</button></div>
+        </div>
+
+        <div id="step2" class="step">
+            <img id="proofImage" src="">
+            <h3 id="questionText" class="typing-mask"></h3>
+            <div id="choices" style="display: flex; flex-direction: column;"></div>
+            <p id="msgDisplay" style="color: #636e72; font-style: italic; min-height: 2em;"></p>
+            <div class="nav-container">
+                <button class="btn" style="font-size:0.7em;" id="backBtn" onclick="prevQuizQuestion()">← Back</button>
+                <button class="btn" style="font-size:0.7em; background:#eee;" onclick="triggerHomeConfirm()">🏠 Home</button>
+                <button class="btn" id="nextBtn" style="font-size:0.7em; visibility:hidden;" onclick="nextQuizQuestion()">Next →</button>
+            </div>
+        </div>
+
+        <div id="step3" class="step">
+            <h2 style="color: #ff4757;">Thank you for being the best Valentine ever now and forever ❤️</h2>
+            <div class="final-pics">
+                <img src="assets/us1.jpeg" class="float-1">
+                <img src="assets/us2.jpeg" class="float-2">
+                <img src="assets/us3.jpeg" class="float-3">
+            </div>
+            <div class="nav-container">
+                <button class="btn" style="font-size:0.7em;" onclick="goToStep(2)">← Back to Quiz</button>
+                <button class="btn" style="font-size:0.7em; background:#eee;" onclick="triggerHomeConfirm()">🏠 Home</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const encryptionKey = "CHLOE2026"; 
+    const playlist = ["assets/song.mp3", "assets/song2.mp3"];
+    let currentTrackIndex = 0;
+    const bgMusic = document.getElementById('bgMusic');
+    let typingTimer = null;
+    let noClickCount = 0;
+
+    function checkAuth() {
+        const input = document.getElementById('authInput').value;
+        if (input.toUpperCase() === encryptionKey.toUpperCase()) {
+            document.getElementById('stepLogin').style.display = 'none';
+            document.getElementById('mainBox').style.display = 'flex';
+            goToStep(0);
+            confetti({ particleCount: 100, spread: 60, origin: { y: 0.7 } });
+        } else {
+            document.getElementById('authError').innerText = "❌ DENIED";
+            document.querySelector('#stepLogin .sketch-container').classList.add('shake');
+            setTimeout(() => document.querySelector('#stepLogin .sketch-container').classList.remove('shake'), 400);
+        }
+    }
+
+    bgMusic.onended = () => {
+        currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
+        bgMusic.src = playlist[currentTrackIndex];
+        bgMusic.play();
+    };
+
+    function toggleMusic() {
+        if (bgMusic.paused) { bgMusic.play(); document.getElementById('musicToggle').innerText = "🔊 Pause"; }
+        else { bgMusic.pause(); document.getElementById('musicToggle').innerText = "🔇 Play"; }
+    }
+
+    function initiateNoProcess() {
+        if (noClickCount === 0) document.getElementById('confirmOverlay').style.display = 'flex';
+        else processVideoLeak();
+    }
+    function confirmNo(confirmed) {
+        document.getElementById('confirmOverlay').style.display = 'none';
+        if (confirmed) processVideoLeak();
+    }
+    function processVideoLeak() {
+        noClickCount++;
+        let playTime = noClickCount === 1 ? 5000 : 10000;
+        document.getElementById('videoRoastText').innerText = noClickCount === 1 ? "Accessing Data: 5s..." : "SYSTEM OVERLOAD: 10s...";
+        document.getElementById('videoOverlay').style.display = 'flex';
+        const pastaVideo = document.getElementById('pastaVideo');
+        pastaVideo.currentTime = 0; 
+        pastaVideo.play();
+        setTimeout(closeVideoAuto, playTime);
+    }
+
+    function closeVideoAuto() {
+        const v = document.getElementById('pastaVideo');
+        v.pause();
+        document.getElementById('videoOverlay').style.display = 'none';
+        if (noClickCount === 2) {
+            const nb = document.getElementById('noBtn');
+            nb.innerText = "Yes Absolutely ❤️";
+            nb.onclick = () => { bgMusic.play(); goToStep(1); };
+        }
+    }
+
+    function triggerHomeConfirm() { document.getElementById('homeConfirmOverlay').style.display = 'flex'; }
+    function closeHomeConfirm() { document.getElementById('homeConfirmOverlay').style.display = 'none'; }
+    function fullSystemReset() {
+        closeHomeConfirm();
+        noClickCount = 0; currentQ = 0;
+        quizData.forEach(q => q.answered = false);
+        const nb = document.getElementById('noBtn');
+        nb.innerText = "No";
+        nb.onclick = initiateNoProcess;
+        bgMusic.pause(); bgMusic.currentTime = 0;
+        clearInterval(typingTimer);
+        goToStep(0);
+    }
+
+    function typeText(element, text, speed = 40) {
+        clearInterval(typingTimer);
+        element.innerHTML = "";
+        let i = 0;
+        typingTimer = setInterval(() => {
+            if (i < text.length) { element.innerHTML += text.charAt(i); i++; }
+            else { clearInterval(typingTimer); }
+        }, speed);
+    }
+
+    function goToStep(stepNum) {
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active-step'));
+        document.getElementById('step' + stepNum).classList.add('active-step');
+        window.scrollTo(0,0);
+        if(stepNum === 0) document.getElementById('musicToggle').style.display = 'none';
+        else document.getElementById('musicToggle').style.display = 'block';
+        if(stepNum === 1) confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        if(stepNum === 2) loadQuestion();
+        if(stepNum === 3) confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 } });
+    }
+
+    document.getElementById('yesBtn').onclick = () => { bgMusic.play(); goToStep(1); };
+
+    function showWrongPopup(msg) {
+        document.getElementById('wrongPopupText').innerText = msg;
+        document.getElementById('wrongPopupOverlay').style.display = 'flex';
+    }
+    function closeWrongPopup() { document.getElementById('wrongPopupOverlay').style.display = 'none'; }
+
+    // QUIZ DATA
+    const quizData = [
+        {
+            q: "What is the Steam game we've played the most together?",
+            options: [
+                { text: "Age of Empires", msg: "Correct! 🏰", img: "assets/aoe.jpg" },
+                { text: "Stardew Valley", msg: "Close, i thought this was it.", img: "assets/stardew.jpg" },
+                { text: "Overcooked", msg: "I thought it had more hours.", img: "assets/overcooked.jpg" },
+                { text: "Sea of Thieves", msg: "Not much tbh.", img: "assets/sea.jpg" }
+            ],
+            correctIndex: 0, bg: "assets/bg1.jpg", answered: false
+        },
+        {
+            q: "Where did we go for our first date in Sri Lanka?",
+            options: [
+                { text: "Port City", msg: "Nope!" },
+                { text: "One Galle Face", msg: "Not quite." },
+                { text: "Fire Beach", msg: "Correct! 🏖️", img: "assets/firebeach.jpeg" },
+                { text: "Lotus Tower", msg: "Wrong!" }
+            ],
+            correctIndex: 2, bg: "assets/bg2.jpg", answered: false
+        },
+        {
+            q: "The first time ever we ate in, what type of food was it?",
+            options: [
+                { text: "Italian", msg: "Nope." },
+                { text: "Japanese", msg: "Correct! 🍣", img: "assets/japanese.jpg" },
+                { text: "Chinese", msg: "Close but no." },
+                { text: "American", msg: "Wrong." }
+            ],
+            correctIndex: 1, bg: "assets/bg3.jpg", answered: false
+        },
+        {
+            q: "What was the exact story reply I sent to you on IG after we met?",
+            options: [
+                { text: "Hows the hangover chloe? ", msg: "Correct! No apostrophe. 😂", img: "assets/ig_reply.jpeg" },
+                { text: "How's the hangover chloe?", msg: "So close! I don't use apostrophes." },
+                { text: "Hows the hangover chloe", msg: "Check punctuation!" },
+                { text: "How's the hangover chloe?😂", msg: "Too much energy." }
+            ],
+            correctIndex: 0, bg: "assets/bg4.jpg", answered: false
+        },
+        {
+            q: "What was the first thing i posted about us?",
+            options: [
+                { text: "Holey Moley Adelaide", msg: "Nope." },
+                { text: "Korean BBQ Adelaide", msg: "I wish." },
+                { text: "Art Museum Adelaide", msg: "Correct! 🎨", img: "assets/art_museum.jpeg" },
+                { text: "Arcade in Holey Moley", msg: "Almost." }
+            ],
+            correctIndex: 2, bg: "assets/bg5.jpg", answered: false
+        },
+        {
+            q: "What is the first ever gift I got you?",
+            options: [
+                { text: "Flowers", msg: "Classic, but not the first." },
+                { text: "Chocolate", msg: "Correct! 🍫", img: "assets/choc_gift.jpg" },
+                { text: "Necklace", msg: "Not the first." },
+                { text: "Bracelet", msg: "Later on." }
+            ],
+            correctIndex: 1, bg: "assets/bg6.jpg", answered: false
+        },
+        {
+            q: "What was the third song we added to OUR Spotify playlist?",
+            options: [
+                { text: "Red Leather", msg: "Nope." },
+                { text: "I wanna be yours", msg: "Not #3." },
+                { text: "Lost in the Fire", msg: "Almost!" },
+                { text: "Tonight (Best You Ever Had)", msg: "Correct! 🎵", img: "assets/spotify.jpeg" }
+            ],
+            correctIndex: 3, bg: "assets/bg7.jpg", answered: false
+        }
+    ];
+
+    let currentQ = 0;
+    function loadQuestion() {
+        const data = quizData[currentQ];
+        typeText(document.getElementById('questionText'), data.q);
+        const choicesDiv = document.getElementById('choices');
+        choicesDiv.innerHTML = "";
+        document.getElementById('msgDisplay').innerText = "";
+        document.getElementById('bgLayer').style.backgroundImage = `url('${data.bg}')`;
+        document.getElementById('proofImage').style.display = "none";
+        const nBtn = document.getElementById('nextBtn');
+        nBtn.style.visibility = data.answered ? "visible" : "hidden";
+
+        data.options.forEach((opt, idx) => {
+            const b = document.createElement('button');
+            b.classList.add('btn'); b.innerText = opt.text;
+            if(data.answered && idx === data.correctIndex) b.style.background = "#c2fbd7";
+            b.onclick = () => {
+                const isCorrect = (idx === data.correctIndex);
+                if (isCorrect || currentQ === 0) {
+                    document.getElementById('proofImage').src = opt.img; 
+                    document.getElementById('proofImage').style.display = "block";
+                    document.getElementById('msgDisplay').innerText = opt.msg;
+                } else { document.getElementById('proofImage').style.display = "none"; showWrongPopup(opt.msg); }
+                if(isCorrect) { b.style.background = "#c2fbd7"; data.answered = true; nBtn.style.visibility = "visible"; }
+                else { document.getElementById('mainBox').classList.add('shake'); setTimeout(() => document.getElementById('mainBox').classList.remove('shake'), 400); b.style.background = "#ff9999"; }
+            };
+            choicesDiv.appendChild(b);
+        });
+    }
+
+    function nextQuizQuestion() { currentQ++; if(currentQ < quizData.length) loadQuestion(); else goToStep(3); }
+    function prevQuizQuestion() { if(currentQ > 0) { currentQ--; loadQuestion(); } else goToStep(1); }
+</script>
+</body>
+</html>
